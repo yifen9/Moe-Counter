@@ -1,16 +1,20 @@
 FROM node:22.13.1
 
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+RUN apt-get update && apt-get install -y python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
 
-COPY . /app
 WORKDIR /app
 
-COPY package.json ./
-COPY pnpm-lock.yaml ./
+ENV PNPM_HOME=/usr/local/share/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN corepack enable && corepack prepare pnpm@10.11.0 --activate
 
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm fetch --frozen-lockfile
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
+ENV npm_config_build_from_source=true
+
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile && pnpm rebuild better-sqlite3 --verbose
+
+COPY . .
 
 EXPOSE 3000
-
-CMD ["pnpm", "start"]
+CMD ["pnpm","start"]
