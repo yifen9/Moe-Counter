@@ -1,4 +1,4 @@
-FROM node:22-bullseye
+FROM node:22.18.0
 
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
