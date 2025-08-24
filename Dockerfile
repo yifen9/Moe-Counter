@@ -1,4 +1,4 @@
-FROM node:22.18.0
+FROM node:22.13.1
 
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
