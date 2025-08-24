@@ -1,20 +1,21 @@
-FROM node:22.13.1
+FROM node:22-bookworm
 
 RUN apt-get update && apt-get install -y python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-ENV PNPM_HOME=/usr/local/share/pnpm
-ENV PATH=$PNPM_HOME:$PATH
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+# 用 npm 锁，保证可复现
+COPY package.json ./
+RUN npm i --package-lock-only
+COPY package-lock.json ./
 
-ENV npm_config_build_from_source=true
+# 安装并强制从源码编译 better-sqlite3
+RUN npm ci --no-audit --no-fund \
+ && npm rebuild better-sqlite3 --build-from-source
 
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile && pnpm rebuild better-sqlite3 --verbose
-
+# 拷源码
 COPY . .
 
 EXPOSE 3000
-CMD ["pnpm","start"]
+CMD ["node","index.js"]
