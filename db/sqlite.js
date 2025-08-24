@@ -81,14 +81,14 @@ function shouldCount(name, ip, ttlSec = 31536000){
   const row = select.get(name, ip)
 
   if (row && row.expire > t) {
-    return Promise.resolve(false)
+    return Promise.resolve(true)
   }
 
   db.prepare(`INSERT INTO tb_seen(name, ip, expire) VALUES(?, ?, ?)
               ON CONFLICT(name, ip) DO UPDATE SET expire = excluded.expire`)
     .run(name, ip, expireAt)
 
-  return Promise.resolve(true)
+  return Promise.resolve(false)
 }
 
 module.exports = {
