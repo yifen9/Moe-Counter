@@ -71,15 +71,6 @@ function setNumMulti(counters) {
   })
 }
 
-module.exports = {
-  getNum,
-  getAll,
-  setNum,
-  setNumMulti,
-  shouldCount,
-  nowSec
-}
-
 function shouldCount(name, ip, ttlSec = 31536000){
   const t = nowSec()
   const expireAt = t + ttlSec
@@ -98,4 +89,13 @@ function shouldCount(name, ip, ttlSec = 31536000){
     .run(name, ip, expireAt)
 
   return Promise.resolve(true)
+}
+
+module.exports = {
+  getNum,
+  getAll,
+  setNum,
+  setNumMulti,
+  shouldCount,
+  nowSec
 }
