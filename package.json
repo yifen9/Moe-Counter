@@ -11,7 +11,7 @@
   "author": "journey-ad",
   "license": "MIT",
   "dependencies": {
-    "better-sqlite3": "^8.7.0",
+    "better-sqlite3": "^9.4.0",
     "compression": "^1.8.0",
     "dotenv": "^16.5.0",
     "express": "^4.21.2",
