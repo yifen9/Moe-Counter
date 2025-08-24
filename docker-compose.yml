@@ -1,6 +1,19 @@
 version: '3'
 services:
-  moe-counter:
+  clarelab-moecounter:
     build: .
+    container_name: clarelab-counter-moecounter
+    restart: unless-stopped
     ports:
       - "3000:3000"
+    networks: [caddy]
+    volumes:
+      - counter_data:/app/count.db
+
+networks:
+  caddy:
+    external: true
+    name: web
+
+volumes:
+  counter_data:
