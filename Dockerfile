@@ -7,7 +7,7 @@ WORKDIR /app
 
 ENV PNPM_HOME=/usr/local/share/pnpm
 ENV PATH=$PNPM_HOME:$PATH
-RUN corepack enable && corepack prepare pnpm@10.11.0 --activate
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
 ENV npm_config_build_from_source=true
 
