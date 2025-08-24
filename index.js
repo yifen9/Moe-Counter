@@ -13,10 +13,17 @@ const { randomArray, logger } = require("./utils");
 
 const app = express();
 
+const pickIp = (req) =>
+  (req.get('CF-Connecting-IP') ||
+   req.get('X-Real-IP') ||
+   (req.get('X-Forwarded-For') || '').split(',')[0].trim() ||
+   req.ip || req.socket.remoteAddress || '').toString();
+
 app.use(express.static("assets"));
 app.use(compression());
 app.use(cors());
 app.set("view engine", "pug");
+app.set('trust proxy', true)
 
 app.get('/', (req, res) => {
   const site = process.env.APP_SITE || `${req.protocol}://${req.get('host')}`
@@ -51,7 +58,7 @@ app.get(["/@:name", "/get/@:name"],
   async (req, res) => {
     const { name } = req.params;
     let { theme = "moebooru", num = 0, ...rest } = req.query;
-    const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
+    const ip = pickIp(req);
 
     // This helps with GitHub's image cache
     res.set({
@@ -150,14 +157,15 @@ async function getCountByName(name, num, ip) {
     if (!(name in __cache_counter)) {
       const counter = (await db.getNum(name)) || defaultCount;
       __cache_counter[name] = counter.num;
-    } else {
-      __cache_counter[name]++;
     }
 
     const canInc = ip ? await db.shouldCount(name, ip, DEDUP_TTL) : true;
     if (canInc) {
       __cache_counter[name]++;
       pushDB();
+      logger.debug(`[inc] name=${name} ip=${ip} -> ${__cache_counter[name]}`);
+    } else {
+      logger.debug(`[skip] name=${name} ip=${ip} (dedup) -> ${__cache_counter[name]}`);
     }
 
     return { name, num: __cache_counter[name] };
