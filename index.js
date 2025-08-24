@@ -6,6 +6,7 @@ const compression = require("compression");
 const { z } = require("zod");
 
 const db = require("./db");
+const DEDUP_TTL = Number(process.env.DEDUP_TTL || 31536000);
 const { themeList, getCountImage } = require("./utils/themify");
 const { cors, ZodValid } = require("./utils/middleware");
 const { randomArray, logger } = require("./utils");
@@ -50,6 +51,7 @@ app.get(["/@:name", "/get/@:name"],
   async (req, res) => {
     const { name } = req.params;
     let { theme = "moebooru", num = 0, ...rest } = req.query;
+    const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
 
     // This helps with GitHub's image cache
     res.set({
@@ -57,7 +59,7 @@ app.get(["/@:name", "/get/@:name"],
       "cache-control": "max-age=0, no-cache, no-store, must-revalidate",
     });
 
-    const data = await getCountByName(String(name), Number(num));
+    const data = await getCountByName(String(name), Number(num), ip);
 
     if (name === "demo") {
       res.set("cache-control", "max-age=31536000");
@@ -137,7 +139,7 @@ async function pushDB() {
   }
 }
 
-async function getCountByName(name, num) {
+async function getCountByName(name, num, ip) {
   const defaultCount = { name, num: 0 };
 
   if (name === "demo") return { name, num: "0123456789" };
@@ -147,12 +149,16 @@ async function getCountByName(name, num) {
   try {
     if (!(name in __cache_counter)) {
       const counter = (await db.getNum(name)) || defaultCount;
-      __cache_counter[name] = counter.num + 1;
+      __cache_counter[name] = counter.num;
     } else {
       __cache_counter[name]++;
     }
 
-    pushDB();
+    const canInc = ip ? await db.shouldCount(name, ip, DEDUP_TTL) : true;
+    if (canInc) {
+      __cache_counter[name]++;
+      pushDB();
+    }
 
     return { name, num: __cache_counter[name] };
   } catch (error) {

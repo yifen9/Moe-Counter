@@ -15,6 +15,14 @@ db.exec(`CREATE TABLE IF NOT EXISTS tb_count (
                        DEFAULT (0) 
 );`)
 
+db.exec(`CREATE TABLE IF NOT EXISTS tb_seen(
+  name   VARCHAR(32) NOT NULL,
+  ip     TEXT        NOT NULL,
+  expire INTEGER     NOT NULL,
+  UNIQUE(name, ip)
+);
+CREATE INDEX IF NOT EXISTS idx_seen_expire ON tb_seen(expire);`)
+
 function getNum(name) {
   return new Promise((resolve, reject) => {
     const stmt = db.prepare('SELECT `name`, `num` from tb_count WHERE `name` = ?')
@@ -67,3 +75,25 @@ module.exports = {
   setNum,
   setNumMulti
 }
+
+function shouldCount(name, ip, ttlSec = 31536000){
+  const t = nowSec()
+  const expireAt = t + ttlSec
+
+  db.prepare('DELETE FROM tb_seen WHERE expire < ?').run(t)
+
+  const select = db.prepare('SELECT expire FROM tb_seen WHERE name = ? AND ip = ?')
+  const row = select.get(name, ip)
+
+  if (row && row.expire > t) {
+    return Promise.resolve(false)
+  }
+
+  db.prepare(`INSERT INTO tb_seen(name, ip, expire) VALUES(?, ?, ?)
+              ON CONFLICT(name, ip) DO UPDATE SET expire = excluded.expire`)
+    .run(name, ip, expireAt)
+
+  return Promise.resolve(true)
+}
+
+module.exports = { getNum, getAll, setNum, setNumMulti, shouldCount }
