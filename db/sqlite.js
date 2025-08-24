@@ -75,7 +75,9 @@ module.exports = {
   getNum,
   getAll,
   setNum,
-  setNumMulti
+  setNumMulti,
+  shouldCount,
+  nowSec
 }
 
 function shouldCount(name, ip, ttlSec = 31536000){
@@ -97,5 +99,3 @@ function shouldCount(name, ip, ttlSec = 31536000){
 
   return Promise.resolve(true)
 }
-
-module.exports = { getNum, getAll, setNum, setNumMulti, shouldCount }
