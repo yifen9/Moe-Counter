@@ -23,6 +23,8 @@ db.exec(`CREATE TABLE IF NOT EXISTS tb_seen(
 );
 CREATE INDEX IF NOT EXISTS idx_seen_expire ON tb_seen(expire);`)
 
+function nowSec () { return Math.floor(Date.now() / 1000) }
+
 function getNum(name) {
   return new Promise((resolve, reject) => {
     const stmt = db.prepare('SELECT `name`, `num` from tb_count WHERE `name` = ?')
